@@ -99,10 +99,117 @@ async function deleteFilm(req, res) {
   }
 }
 
+// Otsi fime title järgi
+async function searchFilmsByTitle(req, res) {
+  try {
+    const { title } = req.query; 
+    const films = await Film.findAll({
+      where: {
+        title: { [Sequelize.Op.iLike]: `%${title}%` } 
+      }
+    });
+    res.json(films);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Otsi fime actor järgi
+async function searchFilmsByActor(req, res) {
+  try {
+    const { actorName } = req.query; 
+    const films = await Film.findAll({
+      include: [
+        {
+          model: models.actor,
+          as: 'actor_id_actors',
+          where: {
+            [Sequelize.Op.or]: [
+              { first_name: { [Sequelize.Op.iLike]: `%${actorName}%` } },
+              { last_name: { [Sequelize.Op.iLike]: `%${actorName}%` } }
+            ]
+          }
+        }
+      ]
+    });
+    res.json(films);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Otsi fime language järgi
+async function searchFilmsByLanguage(req, res) {
+  try {
+    const { language } = req.query; 
+    const films = await Film.findAll({
+      include: [
+        {
+          model: models.language,
+          as: 'language',
+          where: {
+            name: { [Sequelize.Op.iLike]: `%${language}%` }
+          }
+        }
+      ]
+    });
+    res.json(films);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Otsi fime category järgi
+async function searchFilmsByCategory(req, res) {
+  try {
+    const { category } = req.query;
+    const films = await Film.findAll({
+      include: [
+        {
+          model: models.category,
+          as: 'category_id_categories',
+          where: {
+            name: { [Sequelize.Op.iLike]: `%${category}%` }
+          }
+        }
+      ]
+    });
+    res.json(films);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Otsi actors in a film
+async function getActorsByFilm(req, res) {
+  try {
+    const { id } = req.params; 
+    const film = await Film.findByPk(id, {
+      include: [
+        {
+          model: models.actor,
+          as: 'actor_id_actors'
+        }
+      ]
+    });
+    if (!film) {
+      return res.status(404).json({ error: 'Film not found' });
+    }
+    res.json(film.actor_id_actors); 
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 module.exports = {
   getAllFilms,
   getFilmById,
   createFilm,
   updateFilm,
-  deleteFilm
+  deleteFilm,
+  searchFilmsByTitle,
+  searchFilmsByActor,
+  searchFilmsByLanguage,
+  searchFilmsByCategory,
+  getActorsByFilm
 };
